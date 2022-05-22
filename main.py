@@ -25,9 +25,6 @@ def createEmbed(title, description, fields, color):
     embed.add_field(name=field[0], value=field[1], inline=True)
   return embed
 
-user_agents = requests.get("https://gist.githubusercontent.com/pzb/b4b6f57144aea7827ae4/raw/cf847b76a142955b1410c8bcef3aabe221a63db1/user-agents.txt").content.decode("utf-8").split("\n")
-user_agents.pop(1000)
-
 def removeName(name):
     with open("userdata.txt", "r+") as file:
         content = file.read()
@@ -43,7 +40,7 @@ def removeName(name):
         file.close()
 
 def getInfo(name):
-    data = requests.get("https://api.slothpixel.me/api/players/"+name, headers={"User-Agent": random.choice(user_agents)}).json()
+    data = requests.get("https://api.slothpixel.me/api/players/"+name).json()
     try:
         return 0, [data["error"]]
     except KeyError:
