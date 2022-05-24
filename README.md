@@ -5,12 +5,7 @@ Add to server: https://discord.com/api/oauth2/authorize?client_id=97760686391283
 
 <hr>
 
-Commands:
-
-!verify <IGN> - Connects to your Minecraft account.  
-!update - Updates your rank in case of division change (E.g. Legend -> Grandmaster)  
-!unverify - Disconnects from your Minecraft account  
-!unverifyuser - Force disconnects user from Minecraft account (Requires admin perms)
+Documentation of all commands can be found on this page: https://uhcscrims.herokuapp.com/
   
 <hr>
   
