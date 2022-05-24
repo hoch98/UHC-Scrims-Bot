@@ -17,6 +17,8 @@ ranks = {
     "Gold": "gold_uhc",
 }
 
+apikey = "ANTI-SNIPER API KEY"
+
 def createEmbed(title, description, fields, color):
   embed=discord.Embed(title=title, description=description, color=color)
   embed.set_author(name="UHC Scrims Bot", url="https://github.com/CraftYun83/UHC-Scrims-Bot", icon_url="https://i.ibb.co/dW0DnF0/maxresdefault.jpg")
@@ -86,7 +88,7 @@ async def verify(ctx, arg1):
     if success == 0:
       await ctx.send(embed=createEmbed("Error", f"Sorry, {arg1}'s profile isn't linked to any Discord account!", [], color=0xFF0000))
     else:
-      if str(data[1]) == str(ctx.author):
+      if str(data[1]).lower() == str(ctx.author).lower():
         division = data[0]
         role = get(ctx.guild.roles, name=division)
         await ctx.author.add_roles(role)
@@ -115,7 +117,7 @@ async def update(ctx):
   for user in users:
     print(user)
     if len(user) == 3:
-      if user[1] == str(ctx.author):
+      if user[1].lower() == str(ctx.author).lower():
         role = get(ctx.guild.roles, name=user[2].replace("\n", ""))
         print(role)
         await ctx.author.remove_roles(role)
@@ -127,7 +129,7 @@ async def update(ctx):
           print(data[0])
           print(role)
           await ctx.author.add_roles(role)
-          await ctx.send(embed=createEmbed("Role Updated", "Succesfully updated your role!", [["Previous Role: ", user[2].replace("\n", "")], ["New Role: ", data[0]], ["IGN: ", str(user[0])]], color=0x44ff00))
+          await ctx.send(embed=createEmbed("Role Updated", "Succesfully updated your role!", [["Previous Role: ", user[2].replace("\n", "")], ["New Role: ", data[0]], ["IGN: ", str(user[0])]], color=role.color))
           return True
         else:
           print(data[0])
@@ -146,7 +148,7 @@ async def unverify(ctx):
   for user in users:
     print(user)
     if len(user) == 3:
-      if user[1] == str(ctx.author):
+      if user[1].lower() == str(ctx.author).lower():
         role = get(ctx.guild.roles, name=user[2].replace("\n", ""))
         await ctx.author.remove_roles(role)
         removeName(str(ctx.author))
@@ -166,7 +168,7 @@ async def unverifyuser(ctx, member: Member):
 
   for user in users:
     if len(user) == 3:
-      if user[1] == str(member):
+      if user[1].lower() == str(member).lower():
         role = get(ctx.guild.roles, name=user[2].replace("\n", ""))
         await ctx.author.remove_roles(role)
         removeName(str(member))
@@ -181,4 +183,83 @@ async def unverifyuser_error(ctx, error):
   if isinstance(error, commands.MissingPermissions):
     await ctx.send(embed=createEmbed("Error", "You do not have permission to unverify other users!", [], color=0xFF0000))
 
-bot.run("<BOT-KEY>")
+def getRealName(nick):
+    data = requests.get(f"https://api.antisniper.net/denick?key={apikey}&nick={nick}").json()
+    if data["success"] == False:
+        if data["cause"] == "Invalid API key":
+            return 0, ["API-KEY-ERROR"]
+        if data["cause"] == "Malformed nick":
+            return 0, ["INVALID-NICK"]
+        else:
+            return 0, [data["cause"]]
+    else:
+        if "data" in list(data.keys()):
+            if data["data"] == None:
+                return 0, ["NOONE-NICKED"]
+        if "player" in data.keys():
+            if data["player"] != None:
+                return 1, [data["player"]["ign"], data["player"]["uuid"]]
+
+def getNick(name):
+    data = requests.get(f"https://api.antisniper.net/findnick?key={apikey}&name={name}").json()
+    if data["success"] == False:
+        if data["cause"] == "Invalid API key":
+            return 0, ["API-KEY-ERROR"]
+        if data["cause"] == "Malformed name":
+            return 0, ["INVALID-NAME"]
+        else:
+            return 0, [data["cause"]]
+    else:
+        if "data" in list(data.keys()):
+            if data["data"] == None:
+                return 0, ["NICK-NOT-FOUND"]
+        if "player" in data.keys():
+            if data["player"] != None:
+                return 1, [data["player"]["nick"]]
+
+@commands.cooldown(1, 5, commands.BucketType.user)
+@bot.command(name="denick")
+async def denick(ctx, arg1):
+    nick = str(arg1)
+    success, data = getRealName(nick)
+    if success == 1:
+        await ctx.send(embed=createEmbed("Name Grabbed!", f"Succesfully denicked {nick}!", [["Nick: ", nick], ["Actual IGN: ", data[0]], ["UUID: ", data[1]]], color=0x44ff00))
+    else:
+        if data[0] == "NOONE-NICKED" or "INVALID-NICK":
+            await ctx.send(embed=createEmbed("Nick Not Found!", f"I couldn't find anyone nicked {nick}, sorry!", [], color=0xFF0000))
+        else:
+            print(data[0])
+
+@denick.error
+async def denick_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(embed=createEmbed("Invalid Syntax", "Correct Syntax: !denick <NICK>", [], color=0xFF0000))
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(embed=createEmbed("Cooldown!", f"To stop rate limit, I capped this command at once every 5 seconds. You can try again in {error.retry_after:.2f}s.", [], color=0xFF0000))
+    else:
+        print(error)
+
+@commands.cooldown(1, 5, commands.BucketType.user)
+@bot.command(name="getnick")
+async def getnick(ctx, arg1):
+    name = str(arg1)
+    success, data = getNick(name)
+    if success == 1:
+        await ctx.send(embed=createEmbed("Nick Grabbed!", f"Succesfully grabbed nick of {name}!", [["Nick: ", data[0]]], color=0x44ff00))
+    else:
+        if data[0] == "NICK-NOT-FOUND":
+            await ctx.send(embed=createEmbed("Nick Not Found!", f"I couldn't find the nick of {name}, sorry!", [], color=0xFF0000))
+        if data[0] == "INVALID-NAME":
+            await ctx.send(embed=createEmbed("Nick Not Found!", f"I couldn't find the nick of {name} because they apparently don't exist, sorry!", [], color=0xFF0000))
+        print(data[0])
+
+@getnick.error
+async def getnick_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(embed=createEmbed("Invalid Syntax", "Correct Syntax: !getnick <name>", [], color=0xFF0000))
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(embed=createEmbed("Cooldown!", f"To stop rate limit, I capped this command at once every 5 seconds. You can try again in {error.retry_after:.2f}s.", [], color=0xFF0000))
+    else:
+        print(error)
+
+bot.run("BOT-TOKEN")
