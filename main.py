@@ -17,12 +17,13 @@ ranks = {
     "Gold": "gold_uhc",
 }
 
-apikey = "ANTI-SNIPER API KEY"
+apikey = "<ANTISNIPER-API-KEY>"
 
 def createEmbed(title, description, fields, color):
   embed=discord.Embed(title=title, description=description, color=color)
   embed.set_author(name="UHC Scrims Bot", url="https://github.com/CraftYun83/UHC-Scrims-Bot", icon_url="https://i.ibb.co/dW0DnF0/maxresdefault.jpg")
   embed.set_thumbnail(url="https://i.ibb.co/dW0DnF0/maxresdefault.jpg")
+  embed.set_footer(text="https://uhcscrims.herokuapp.com/")
   for field in fields:
     embed.add_field(name=field[0], value=field[1], inline=True)
   return embed
@@ -262,4 +263,4 @@ async def getnick_error(ctx, error):
     else:
         print(error)
 
-bot.run("BOT-TOKEN")
+bot.run("<DC-BOT-TOKEN>")
